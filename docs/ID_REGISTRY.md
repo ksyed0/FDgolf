@@ -9,10 +9,10 @@ Rules:
 
 | Sequence | Next Available ID | Last Assigned |
 |----------|-------------------|---------------|
-| EPIC     | EPIC-0013         | EPIC-0012     |
-| US       | US-0048           | US-0047       |
-| TASK     | TASK-0047         | TASK-0046     |
-| AC       | AC-0155           | AC-0154       |
+| EPIC     | EPIC-0014         | EPIC-0013     |
+| US       | US-0050           | US-0049       |
+| TASK     | TASK-0056         | TASK-0055     |
+| AC       | AC-0163           | AC-0162       |
 | TC       | TC-0171           | TC-0170       |
 | BUG      | BUG-0019          | BUG-0018      |
 
