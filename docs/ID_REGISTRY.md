@@ -9,12 +9,12 @@ Rules:
 
 | Sequence | Next Available ID | Last Assigned |
 |----------|-------------------|---------------|
-| EPIC     | EPIC-0013         | EPIC-0012     |
-| US       | US-0048           | US-0047       |
-| TASK     | TASK-0047         | TASK-0046     |
-| AC       | AC-0155           | AC-0154       |
+| EPIC     | EPIC-0014         | EPIC-0013     |
+| US       | US-0050           | US-0049       |
+| TASK     | TASK-0056         | TASK-0055     |
+| AC       | AC-0163           | AC-0162       |
 | TC       | TC-0171           | TC-0170       |
-| BUG      | BUG-0019          | BUG-0018      |
+| BUG      | BUG-0022          | BUG-0021      |
 
 > Note (2026-09-30): BUG-0015 was already consumed by a merged fix (commit `f000ad3`,
 > "Scope player tournament lookup to membership, not latest row") whose `docs/BUGS.md`
@@ -22,3 +22,8 @@ Rules:
 > even though that ID was spent. Corrected here; BUG-0016 is the next real ID and was
 > assigned to the new entry below it in this session. The missing BUG-0015 write-up is
 > a separate pre-existing gap, not addressed here.
+
+> Note (2026-11-12): the BUG row was stale again — BUG-0019 (GitHub Actions dispatch anomaly) had
+> already been assigned in `docs/BUGS.md` while the registry still listed it as next available.
+> Corrected here; BUG-0020 and BUG-0021 were assigned this session (npm audit advisories;
+> `e2e` job on an unsupported Playwright runner image).

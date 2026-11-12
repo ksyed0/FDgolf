@@ -103,6 +103,15 @@ Status: Done
 Dependencies: EPIC-0007
 ```
 
+```
+EPIC-0013: Repository Migration & CI/CD Reconfiguration
+Description: Move the project to its own GitHub repository (ksyed0/FDgolf, previously ksyed0/FDgolf_CodeMie) and restore the full CI/CD chain — GitHub repo settings and CI secrets, plus Vercel preview/production deployments reconnected to the new repo.
+Release Target: v0.9
+Status: In Progress
+Dependencies: EPIC-0001
+Start Date: 2026-11-12
+```
+
 ---
 
 ## User Stories
@@ -732,6 +741,36 @@ Acceptance Criteria:
 Notes: Scoped to environment-dependent infra only (schema, connectivity, seed data) — not UI theming (AC-0019–AC-0021) or the sync engine (AC-0022–AC-0026), which are code-level behavior already covered by unit/E2E tests, not per-environment setup. AC-0009 (realtime) and AC-0011/AC-0012 (Vercel prod deploy) are flagged in script output for manual verification — a live realtime websocket subscription crashes under this project's Node/undici version, and Vercel env var configuration isn't inspectable from a local script.
 ```
 
+```
+US-0048 (EPIC-0013): As the project owner, I want the new ksyed0/FDgolf GitHub repo configured with the right default branch, branch protection, Actions secrets and Pages, so that CI, CodeQL and the Plan Visualizer dashboard behave as they did on the previous repo.
+Priority: High
+Estimate: S
+Status: In Progress
+Branch: chore/US-0048-github-repo-config
+Dependencies: None
+Acceptance Criteria:
+  - [ ] AC-0155: Default branch is `develop`, and `main` and `develop` are protected (pull request required, no direct pushes) with the CI checks (format, lint, test, CodeQL) required to pass before merge
+  - [ ] AC-0156: Actions repository secrets `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` exist, with values taken from the Supabase cloud project and never committed to the repo
+  - [ ] AC-0157: GitHub Pages is enabled with source "GitHub Actions" and the Plan Visualizer workflow's deploy step publishes `docs/` successfully
+  - [x] AC-0158: Release tag `v0.8` exists on the remote
+Notes: First CI run on the new repo (2026-11-12): format, lint, test, CodeQL and Plan Visualizer passed; the `audit` job failed on newly published high/critical dependency advisories (sharp, source-map-js, zod) — unrelated to the migration and tracked separately. The test job passed without the three secrets, so AC-0156 is required before any live-data test is added rather than to unblock CI today. Release tags `v0.5`–`v0.7` are intentionally not pushed: they point to commits orphaned by an earlier history rewrite on `develop`/`main`. Several steps need the repo-admin token, which the agent session does not hold, so they are human tasks.
+```
+
+```
+US-0049 (EPIC-0013): As the project owner, I want the Vercel project `fdgolf_cm` reconnected to ksyed0/FDgolf with its environment variables intact, so that `develop` auto-deploys previews and `main` auto-deploys production at https://fdgolfcm.vercel.app.
+Priority: High
+Estimate: S
+Status: Planned
+Branch: chore/US-0049-vercel-reconnect
+Dependencies: US-0048
+Acceptance Criteria:
+  - [ ] AC-0159: Vercel project `fdgolf_cm` Git integration points to `ksyed0/FDgolf` with `main` as the production branch, and the old `ksyed0/FDgolf_CodeMie` connection is removed
+  - [ ] AC-0160: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` and `NEXT_PUBLIC_MAPBOX_TOKEN` are still present for both Production and Preview scopes after the reconnect
+  - [ ] AC-0161: A push to `develop` produces a Preview deployment and a merge to `main` produces a Production deployment at fdgolfcm.vercel.app, both reaching READY, and `/live/cibc-granite-ridge-2026` loads
+  - [ ] AC-0162: The "Vercel Project" section of `MEMORY.md` records `ksyed0/FDgolf` as the connected repository
+Notes: The agent's Vercel tooling can read project settings and deployments but cannot change a project's Git connection, so TASK-0052 must be done in the Vercel dashboard. As of 2026-11-12 the project is still connected to the old `ksyed0/FDgolf_CodeMie` repo, so pushes to the new repo do not deploy.
+```
+
 ---
 
 ## Tasks
@@ -1148,4 +1187,85 @@ Assignee: Agent
 Status: Done
 Branch: docs/session-39-close
 Notes: Checks env vars, Supabase browser/server client connectivity, all 9 tables present, RLS blocks unauthenticated score reads, and clubs/holes/tournament seed data present. Flags realtime (AC-0009) and Vercel prod config (AC-0011/AC-0012) as needing manual verification rather than faking a pass. Covered by TC-0129.
+```
+
+```
+TASK-0047 (US-0048): Set the default branch of ksyed0/FDgolf to `develop`
+Type: Infra
+Assignee: Human (Kamal)
+Status: To Do
+Branch: chore/US-0048-github-repo-config
+Notes: Settings → General → Default branch, or `gh repo edit ksyed0/FDgolf --default-branch develop` with the admin token (e.g. from Claude Code on the Mac). Currently `main`.
+```
+
+```
+TASK-0048 (US-0048): Create Actions secrets NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY on ksyed0/FDgolf
+Type: Infra
+Assignee: Human (Kamal)
+Status: To Do
+Branch: chore/US-0048-github-repo-config
+Notes: Settings → Secrets and variables → Actions, or `gh secret set <NAME>`. Take the values from the Supabase cloud project (or the git-ignored `.env.local`); never paste them into the repo, a PR or a chat. The `e2e` job writes its own `.env.local` from a local Supabase instance and does not use these.
+```
+
+```
+TASK-0049 (US-0048): Enable GitHub Pages (source: GitHub Actions) and re-run the Plan Visualizer workflow
+Type: Infra
+Assignee: Human (Kamal)
+Status: To Do
+Branch: chore/US-0048-github-repo-config
+Notes: Settings → Pages → Build and deployment → Source: GitHub Actions, then re-run the "Plan Visualizer" workflow. Its deploy step is `continue-on-error`, so it shows green even while Pages is off — check the job log for the deploy step, not the overall result.
+```
+
+```
+TASK-0050 (US-0048): Configure branch protection (or rulesets) for main and develop
+Type: Infra
+Assignee: Human (Kamal)
+Status: To Do
+Branch: chore/US-0048-github-repo-config
+Notes: Require a pull request and passing status checks (format, lint, test, CodeQL) per AGENTS.md "never push directly to main or develop". Add `audit` as a required check once the dependency advisories are resolved, otherwise it blocks every merge.
+```
+
+```
+TASK-0051 (US-0048): Push release tag v0.8 to ksyed0/FDgolf
+Type: Infra
+Assignee: Human (Kamal)
+Status: Done
+Branch: chore/US-0048-github-repo-config
+Notes: Pushed by Kamal on 2026-11-12 (`git push origin v0.8`) and confirmed on the remote. v0.5–v0.7 deliberately left local — they point to orphaned commits.
+```
+
+```
+TASK-0052 (US-0049): Reconnect the Vercel project fdgolf_cm to ksyed0/FDgolf
+Type: Infra
+Assignee: Human (Kamal)
+Status: To Do
+Branch: chore/US-0049-vercel-reconnect
+Notes: Vercel dashboard → fdgolf_cm → Settings → Git → Disconnect the old `FDgolf_CodeMie` repo, then Connect `ksyed0/FDgolf` (install or extend the Vercel GitHub app to the new repo if prompted). Production branch `main`. Project ID prj_2ekiP2phChQuxw2cTsCWSumIHhUL, team ksyed0s-projects.
+```
+
+```
+TASK-0053 (US-0049): Verify the four environment variables are still set for Production and Preview
+Type: Infra
+Assignee: Human (Kamal)
+Status: To Do
+Branch: chore/US-0049-vercel-reconnect
+Notes: Settings → Environment Variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_MAPBOX_TOKEN. Re-add any that are missing; reconnecting normally keeps them.
+```
+
+```
+TASK-0054 (US-0049): Trigger and verify a Preview deployment from develop and a Production deployment from main
+Type: Test
+Assignee: Human (Kamal)
+Status: To Do
+Branch: chore/US-0049-vercel-reconnect
+Notes: Both deployments reach READY; open fdgolfcm.vercel.app and /live/cibc-granite-ridge-2026. The agent can read deployment status via the Vercel tools to double-check once the reconnect is done.
+```
+
+```
+TASK-0055 (US-0049): Update the "Vercel Project" section of MEMORY.md with the new connected repository
+Type: Docs
+Assignee: Agent
+Status: To Do
+Branch: chore/US-0049-vercel-reconnect
+Notes: Change the GitHub integration line from `ksyed0/FDgolf_CodeMie` to `ksyed0/FDgolf` after TASK-0052 is verified.
 ```
