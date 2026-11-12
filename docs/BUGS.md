@@ -1,5 +1,57 @@
 # FDgolf — Bug Tracker
 
+BUG-0021: CI `e2e` job fails before any test runs — Playwright 1.60.0 does not support the
+  `ubuntu-latest` runner image (now Ubuntu 26.04)
+Severity: Medium
+Related Story: N/A (CI/CD infrastructure)
+Steps to Reproduce:
+  1. Open any pull request against `develop` or `main` on `ksyed0/FDgolf` (first observed on
+     PR #1, docs-only, CI run 43296397179).
+  2. Let the `e2e` job in `.github/workflows/ci.yml` reach the step
+     `npx playwright install --with-deps chromium`.
+Impact: Blocks the E2E gate on every pull request; no functional or user-facing impact.
+Expected: Chromium and its system dependencies install, and `npx playwright test` runs.
+Actual: The step exits 1 — "Playwright does not support chromium on ubuntu26.04-x64" and
+  "Cannot install dependencies for ubuntu26.04-x64 with Playwright 1.60.0". The runner label
+  `ubuntu-latest` now resolves to Ubuntu 26.04. Every earlier step (`supabase start`, seed,
+  `reset-lionhead`) succeeded, and no `playwright-report/` is produced. The job only runs on
+  `pull_request`, so it did not show up on the first push to `main`/`develop` and is
+  independent of the PR's contents.
+Status: Open
+Fix Branch: bugfix/BUG-0021-e2e-runner-playwright
+Lesson Encoded: No
+
+Fix approach (not yet applied): pin the `e2e` job to `runs-on: ubuntu-24.04` in `ci.yml`
+(consider pinning the other jobs too so runner upgrades are deliberate), or upgrade
+Playwright to a release that supports the newer image. Re-run the full E2E suite afterwards,
+since it has not run on this repo yet.
+
+BUG-0020: CI `audit` job fails — `npm audit --audit-level=high` reports new high/critical
+  advisories in dependencies
+Severity: High
+Related Story: N/A (CI/CD infrastructure)
+Steps to Reproduce:
+  1. From the repo root run `npm audit --package-lock-only --audit-level=high` (observed
+     2026-11-12), or see the `audit` job in CI run 43293190576 (`main`) and 43296397179 (PR #1).
+Impact: Red CI check on every push and PR until resolved; the advisories are in third-party
+  packages and no functional or user-facing impact was observed.
+Expected: Exit 0 — no advisories at high severity or above.
+Actual: Exit 1 — 35 vulnerabilities (3 low, 23 moderate, 6 high, 3 critical). The tail of the
+  report names three high-severity packages: `sharp` (GHSA-wq5f-xc86-pv6w, librsvg
+  dependency), `source-map-js` 1.0.0–1.2.1 (GHSA-68fv-2mgg-jv7q, event-loop DoS) and `zod`
+  <4.6.6 (GHSA-mrhx-c7xc-m3w5, memory exhaustion). Run the command above for the full list,
+  including the critical ones. The failure is unrelated to the repo move: `main` and docs-only
+  PR #1 share the same lockfile and both fail the same step.
+Status: Open
+Fix Branch: bugfix/BUG-0020-npm-audit-advisories
+Lesson Encoded: No
+
+Fix approach (not yet applied): run `npm audit fix` for the non-breaking updates
+(`sharp`, `source-map-js`). `zod` only has a `--force` fix that installs `shadcn@1.0.0`, a
+breaking change — evaluate that upgrade separately. For anything that is build-time only with
+no patched version, record a documented dismissal rather than lowering the audit threshold.
+Do not make `audit` a required status check (TASK-0050) until this is closed.
+
 BUG-0019: GitHub Actions does not dispatch CI/CodeQL runs for push/pull_request events on this
   repo (confirmed on PR #94, `docs/sync-cost-log-tail14` → `develop`)
 Severity: Medium (blocks CI verification before merge; no functional/user-facing impact)
